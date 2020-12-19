@@ -1,7 +1,7 @@
 const express = require('express')
 const fetch = require('node-fetch');
 
-const google_api_key = require('../api_keys.js');
+const { google_api_key } = require('../secret.json');
 const cost_per_km = 2;
 
 const router = express.Router();
