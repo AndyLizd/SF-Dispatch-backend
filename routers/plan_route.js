@@ -50,9 +50,9 @@ function prepare_options(ship_from, ship_to, google_routes) {
 		}
 		let cart = {coords: coords, cost: cal_cost(google_routes.routes[0].legs[0].distance.value/1000)};
 		let drone = {
-							coords: [coords[0], coords[coords.length-1]], 
-							cost: cal_cost(cal_drone_distance(google_routes.routes[0].legs[0].start_location, 
-											google_routes.routes[0].legs[0].end_location))
+						coords: [station, coords[0], coords[coords.length-1]], 
+						cost: cal_cost(cal_drone_distance(google_routes.routes[0].legs[0].start_location, station) + 
+							cal_drone_distance(station, google_routes.routes[0].legs[0].end_location))
 		};
 	const options = {cart: cart, drone: drone};
 	return	{
@@ -67,8 +67,8 @@ router.get('/get-options', async (req, res) => {
 	const ship_to = req.query.to; 
 
 	let query = `https://maps.googleapis.com/maps/api/directions/json?`;
-	query += `origin=${ship_from}&destination=${ship_to}&key=${google_api_key}`;
-	query += `&waypoints=${station.lat}%2c${station.lng}`;
+	query += `origin=${station.lat}%2c${station.lng}&destination=${ship_to}&key=${google_api_key}`;
+	query += `&waypoints=${ship_from}`;
 
 	let google_routes = await fetch(query).catch(err => res.send('Fail to fetch routes from the map'));
 	google_routes = await google_routes.json();
