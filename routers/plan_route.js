@@ -1,11 +1,9 @@
 const express = require('express')
 const fetch = require('node-fetch');
-
 const { google_api_key } = require('../secret.json');
-const cost_per_km = 2;
+const {cost_per_km, station} = require('../config.json');
 
 const router = express.Router();
-
 
 // helper functions
 function cal_cost(distance) {
@@ -68,7 +66,9 @@ router.get('/get-options', async (req, res) => {
 	const ship_from = req.query.from; 
 	const ship_to = req.query.to; 
 
-	const query = `https://maps.googleapis.com/maps/api/directions/json?origin=${ship_from}&destination=${ship_to}&key=${google_api_key}`;
+	let query = `https://maps.googleapis.com/maps/api/directions/json?`;
+	query += `origin=${ship_from}&destination=${ship_to}&key=${google_api_key}`;
+	query += `&waypoints=${station.lat}%2c${station.lng}`;
 
 	let google_routes = await fetch(query).catch(err => res.send('Fail to fetch routes from the map'));
 	google_routes = await google_routes.json();
