@@ -1,29 +1,40 @@
 const express = require('express');
-const User = require('../models/user');
-
+const auth = require('../middleware/auth');
+const {User} = require('../models/user');
+const {Visitor_Order} = require('../models/orders');
 const router = express.Router();
 
+// require token header
+router.post('/as-user', auth, async (req, res) => {
+	const user = await User.findOne({_id: req.user._id});
 
-router.post('/', (req, res) => {
-    res.send(req);
+	if (!user) {
+		res.send('Invalid token. Cannot find user indicated.');
+		return;
+	}
+
+	user.orders.push(req.body);
+	try {
+		await user.save();
+	} catch(err) {
+		res.send(err);
+	} 
+	
+	res.send(user);
 })
 
-// mongoose test
-// const User = require('./models/user');
-// const user_a = new User({
-//     fname: 'Andy',
-//     lname: 'Li',
-//     orders: [{
-//         ship_from: '1003 W Aaron Dr., State College, PA',
-//         ship_to: 'Old Main, University Park, PA',
-//         cost: 12.5,
-//         delivery_type: 'drone',
-//     }],
-// });
+// does not require token header
+router.post('/as-visitor', async (req, res) => {
+	const order = new Visitor_Order(req.body);
 
+	try {
+		await order.save();
+		res.send(order);
+	} catch(err) {
+		console.log(err);
+		res.status(400).send('Cannot write to database');
+	}
+})
 
-// user_a.save()
-// .then(result => console.log(result))
-// .catch(err => consolge.log(err));
 
 module.exports = router;

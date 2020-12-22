@@ -12,19 +12,22 @@ router.post('/sign-up', async (req, res) => {
 	
 	const { error } = validate(req.body);
 	
-	if (error) res.send(error.details[0].message);
-	
+	if (error) {
+		res.send(error.details[0].message);
+		return;
+	}
+
 	let user = await User.findOne({email: req.body.email});
 	if (user) res.send('Email account already registered.')
 
   try {
-		req.body.password = await bcrypt.hash(req.body.password, saltRounds);
-		user = new User(req.body)
-		await user.save();
+	req.body.password = await bcrypt.hash(req.body.password, saltRounds);
+	user = new User(req.body)
+	await user.save();
     res.send({user_email: user.email, status: 'success'});
   } catch (err) {
-		console.log(err)
-    res.status(400).send('Cannot write to database.');
+	console.log(err)
+	res.status(400).send('Cannot write to database.');
   }
 });
 
@@ -45,9 +48,6 @@ router.post('/login', async (req, res) => {
 });
 
 
-router.post('/test', (req, res) => {
-	res.send(req);
-})
 
 
 module.exports = router;

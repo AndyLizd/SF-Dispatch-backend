@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
+const {order_schema} = require('./orders');
 
 const Schema = mongoose.Schema;
 
@@ -8,16 +9,9 @@ const user_schema = new Schema({
     lname: {type: String, required: true},
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true},
-    orders: [{
-        ship_from: {type: String, required: true},
-        ship_to: {type: String, required: true},
-        cost: {type: Number, required: true},
-        delivery_type: {type: String, require: true},
-        order_timestamp: {type: Date, default: Date.now},
-        complete_timestamp: {type: Date},
-    }]
+    orders: [order_schema]
 })
- 
+
 
 const User = mongoose.model('user', user_schema);
 
@@ -40,6 +34,8 @@ let validate_schema = Joi.object({
     password: Joi.string()
     .pattern(new RegExp('^[a-zA-Z0-9]{3,30}$'))
     .required(),
+
+    orders: Joi.array()
 })
 
 const validate_user = (input) => {

@@ -40,31 +40,40 @@ function cal_drone_distance(start_coord, end_coord) {
     }    
 }
 
-router.get('/getOptions', (req, res) => {    
-    const shipFrom = req.query.from; 
-    const shipTo = req.query.to; 
- 
-    const query = `https://maps.googleapis.com/maps/api/directions/json?origin=${shipFrom}&destination=${shipTo}&key=${google_api_key}`;
-    
-    fetch(query)
-    .then(res => res.json())
-    .then(res => {
-        let coords = [];
-        for (leg of res.routes[0].legs) {
-            for (step of leg.steps) {
-                coords.push(step.start_location);
-            }
-        }
-        let cart = {coords: coords, cost: cal_cost(res.routes[0].legs[0].distance.value/1000)};
-        let drone = {
-                        coords: [coords[0], coords[coords.length-1]], 
-                        cost: cal_cost(cal_drone_distance(res.routes[0].legs[0].start_location, 
-                                                        res.routes[0].legs[0].end_location))
-                    };
-        return {cart: cart, drone: drone};
-    })
-    .then(options => res.send(options))
-    .catch(console.error);
+function prepare_options(ship_from, ship_to, google_routes) {
+	const ship_from_coord = google_routes.routes[0].legs[0].start_location;
+	const ship_to_coord = google_routes.routes[0].legs[0].end_location;
+
+	let coords = [];
+		for (leg of google_routes.routes[0].legs) {
+			for (step of leg.steps) {
+				coords.push(step.start_location);
+			}
+		}
+		let cart = {coords: coords, cost: cal_cost(google_routes.routes[0].legs[0].distance.value/1000)};
+		let drone = {
+							coords: [coords[0], coords[coords.length-1]], 
+							cost: cal_cost(cal_drone_distance(google_routes.routes[0].legs[0].start_location, 
+											google_routes.routes[0].legs[0].end_location))
+		};
+	const options = {cart: cart, drone: drone};
+	return	{
+			ship_from: {address:ship_from, lat: ship_from_coord.lat, lng: ship_from_coord.lng}, 
+			ship_to: {address:ship_to, lat: ship_to_coord.lat, lng: ship_to_coord.lng},
+			options: options,
+		}
+}
+
+router.get('/get-options', async (req, res) => {    
+	const ship_from = req.query.from; 
+	const ship_to = req.query.to; 
+
+	const query = `https://maps.googleapis.com/maps/api/directions/json?origin=${ship_from}&destination=${ship_to}&key=${google_api_key}`;
+
+	let google_routes = await fetch(query).catch(err => res.send('Fail to fetch routes from the map'));
+	google_routes = await google_routes.json();
+		
+	res.send(prepare_options(ship_from, ship_to, google_routes));
 })
 
 module.exports = router;
